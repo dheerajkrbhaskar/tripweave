@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tripweave | AI travel planning</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <main class="app-container">
+        <header class="site-header">
+            <a class="brand" href="/" aria-label="Tripweave home">
+                <span class="brand-mark" aria-hidden="true">✦</span>
+                <span>Tripweave</span>
+            </a>
+            <div class="header-meta"><span class="status-dot"></span> AI travel planning</div>
+        </header>
+
+        <section class="hero-section" aria-labelledby="hero-title">
+            <p class="eyebrow">YOUR NEXT JOURNEY, WEAVED TOGETHER</p>
+            <h1 id="hero-title">Travel planning with a little more <em>intention.</em></h1>
+            <p class="hero-copy">Tell Tripweave what you have in mind. We’ll bring together routes, stays, ideas, and a practical day-by-day plan.</p>
+        </section>
+
+        <section class="planner-card">
+
+            <div class="card-header">
+                <div>
+                    <p class="eyebrow">START WITH A THOUGHT</p>
+                    <h2>What kind of trip are you imagining?</h2>
+                    <p>Share a destination, dates, budget, pace, or simply a feeling. Details can come later.</p>
+                </div>
+                <span class="shortcut"><kbd>Ctrl</kbd><span>+</span><kbd>Enter</kbd> to plan</span>
+            </div>
+
+            <div class="input-area">
+                <textarea
+                    id="userInput"
+                    aria-label="Describe your travel plans"
+                    aria-describedby="inputHint"
+                    placeholder="Plan 7 days in Japan from Delhi, India for under 2 lakhs, with food spots and a relaxed pace..."
+                ></textarea>
+                <button id="sendBtn" type="button" onclick="sendMessage()" aria-label="Generate travel plan">
+                    <span id="btnText">Weave my trip <span aria-hidden="true">→</span></span>
+                    <span id="btnLoader" class="loading-label hidden" aria-live="polite"><span class="loader" aria-hidden="true"></span><span id="loadingText">Understanding your trip...</span></span>
+                </button>
+            </div>
+            <p id="inputHint" class="input-hint">The more you share, the more personal your plan becomes.</p>
+
+            <div class="quick-prompts" aria-label="Example travel prompts">
+                <span class="prompt-label">Try asking</span>
+                <button type="button" onclick="setPrompt('Plan a complete 7 days Japan trip from Delhi, India including flights, hotels and sightseeing under 2 lakhs.')">Japan on a budget</button>
+                <button type="button" onclick="setPrompt('Plan a 5 days Dubai trip from Delhi, India with flights, hotels and sightseeing.')">A Dubai long weekend</button>
+                <button type="button" onclick="setPrompt('Plan a 7 days Thailand trip from Delhi, India with budget hotels and sightseeing.')">Slow days in Thailand</button>
+            </div>
+
+        </section>
+
+        <section id="resultSection" class="result-section hidden">
+
+            <div class="result-header">
+                <div>
+                    <p class="eyebrow">YOUR PERSONAL ITINERARY</p>
+                    <h2>Your trip, thoughtfully arranged.</h2>
+                    <p id="threadInfo">Ready to explore</p>
+                </div>
+
+                <div class="result-actions">
+                    <button class="copy-btn" type="button" onclick="copyResult()" aria-label="Copy travel plan">
+                        <span aria-hidden="true">▣</span> Copy plan
+                    </button>
+                    <button class="download-btn" type="button" onclick="downloadPDF()" aria-label="Download travel plan as PDF">
+                        <span aria-hidden="true">↓</span> Download PDF
+                    </button>
+                </div>
+            </div>
+
+            <div id="pdfContent" class="pdf-content">
+                <h1 class="pdf-title">Tripweave Travel Plan</h1>
+                <div class="plan-overview" id="planOverview" aria-label="Trip plan overview"></div>
+                <div id="resultBox" class="result-box" aria-live="polite"></div>
+            </div>
+
+        </section>
+
+        <section id="errorBox" class="error-box hidden"></section>
+
+    </main>
+
+    <footer><span>Tripweave</span> · Thoughtful plans for wherever you’re going next.</footer>
+
+    <!-- Markdown Renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- PDF Download Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Your Custom JS -->
+    <script src="/static/script.js"></script>
+
+</body>
+</html>
