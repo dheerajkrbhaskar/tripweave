@@ -1,11 +1,16 @@
-import os 
 import asyncio
 import certifi
+import os
 import sys
-from langchain_groq import ChatGroq
+from pathlib import Path
+from typing import Any
+
 from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
+
+BASE_DIR = Path(__file__).resolve().parent
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
@@ -55,13 +60,13 @@ client = MultiServerMCPClient(
         "aviationstack":{
             "transport":"stdio",
             "command":sys.executable,
-            "args":[os.path.join(os.path.dirname(__file__), "flight_mcp_server.py")],
+            "args":[str(BASE_DIR / "flight_mcp_server.py")],
             "env": AVIATION_ENV
         },
         "weather":{
             "transport":"stdio",
-            "command": ".venv/bin/python",
-            "args":["weather_mcp_server.py"],
+            "command": sys.executable,
+            "args":[str(BASE_DIR / "weather_mcp_server.py")],
             "env": WEATHER_ENV
         }
     },
@@ -71,22 +76,27 @@ client = MultiServerMCPClient(
 tavily_search_tool = None
 
 async def get_tavily_search_tool():
+    """Cache and return the Tavily search tool exposed by the MCP server."""
     global tavily_search_tool
     if tavily_search_tool is not None:
-        return
+        return tavily_search_tool
     tools= await client.get_tools()
 
     tavily_search_tool = next(tool for tool in tools if tool.name=="tavily_search")
+    return tavily_search_tool
 
 
+async def tavily_mcp_search(query: str) -> Any:
+    """Run a search through the configured Tavily MCP server."""
+    tool = await get_tavily_search_tool()
+    return await tool.ainvoke({"query": query})
 
-async def tavily_mcp_search(query:str):
-    await get_tavily_search_tool()
-    result = await tavily_search_tool.ainvoke({"query":query})
 
-    #print(result)
-    return result
-async def aviation_mcp_call(tool_name:str, tool_arg:dict=None):
+async def aviation_mcp_call(
+    tool_name: str,
+    tool_arg: dict[str, Any] | None = None,
+) -> Any:
+    """Invoke a named tool from the configured AviationStack server."""
     tools = await client.get_tools()
     tool = next(t for t in tools if t.name == tool_name)
     result = await tool.ainvoke(tool_arg or {})
@@ -94,9 +104,12 @@ async def aviation_mcp_call(tool_name:str, tool_arg:dict=None):
     return result
     
 
-search_tool =None
-aviation_tools = {}
+search_tool = None
+aviation_tools: dict[str, Any] = {}
+
+
 async def initialize_mcp():
+    """List the tools currently exposed by the configured MCP servers."""
     global search_tool
     global aviation_tools
     if search_tool is not None and aviation_tools:
@@ -110,6 +123,7 @@ async def initialize_mcp():
         print(tool.name)
 
 def extract_destination(query:str):
+    """Use the configured language model to extract a destination."""
     prompt = f"""Extract only destination city or country.
                 Query: {query}
                 Return only destination name
@@ -124,6 +138,7 @@ flight_tool = None
 
 
 async def initialize_flight_tools():
+    """Discover and cache the local AviationStack MCP tool."""
     global flight_tool
 
     if flight_tool is not None:
@@ -143,6 +158,7 @@ async def initialize_flight_tools():
 
 
 async def initialize_weather_tools():
+    """Discover and cache the weather MCP tools."""
     global weather_tool
     global forecast_tool
 
@@ -179,7 +195,8 @@ async def initialize_weather_tools():
             f"{available_tools or 'none'}"
         )
 
-async def flight_mcp_search(query:str):
+async def flight_mcp_search(query: str) -> str:
+    """Search live flights and normalize the MCP response to plain text."""
     await initialize_flight_tools()
     result = await flight_tool.ainvoke({"query": query})
     if isinstance(result, list):
@@ -192,12 +209,15 @@ async def flight_mcp_search(query:str):
             return "\n".join(text_parts)
     return str(result)
 
-async def weather_mcp_search(city:str):
+async def weather_mcp_search(city: str) -> Any:
+    """Fetch current weather for a city through MCP."""
     await initialize_weather_tools()
     result = await weather_tool.ainvoke({"city":city})
     return result
 
-async def forecast_mcp_search(city:str):
+
+async def forecast_mcp_search(city: str) -> Any:
+    """Fetch a short forecast for a city through MCP."""
     await initialize_weather_tools()
     result = await forecast_tool.ainvoke({"city":city})
     return result

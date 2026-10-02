@@ -1,9 +1,9 @@
 import os
 import re
-import certifi
+
 import airportsdata
-import requests
 import pycountry
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -114,7 +114,7 @@ CITY_MAIN_AIRPORT = {
     "frankfurt": "FRA",
 }
 
-def clean_text(text:str)->str:
+def clean_text(text: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     text = re.sub(r"\s+", " ", text)
@@ -126,7 +126,7 @@ def clean_text(text:str)->str:
 
     return " ".join(words).strip()
 
-def country_name_to_code(text:str):
+def country_name_to_code(text: str) -> str | None:
     text = clean_text(text)
 
     if text in COUNTRY_ALIASES:
@@ -166,7 +166,7 @@ def airport_country_matches(airport: dict, country_code: str) -> bool:
 
     return False
 
-def get_best_airport_for_country(country_code: str):
+def get_best_airport_for_country(country_code: str) -> str | None:
     preferred = COUNTRY_MAIN_AIRPORT.get(country_code)
 
     if preferred and preferred in AIRPORTS:
@@ -201,7 +201,7 @@ def get_best_airport_for_country(country_code: str):
     candidates.sort(reverse=True)
     return candidates[0][1]
 
-def resolve_location_to_iata(location: str):
+def resolve_location_to_iata(location: str) -> str | None:
     """
     Converts country/city/airport/IATA into IATA code.
 
@@ -270,7 +270,7 @@ def resolve_location_to_iata(location: str):
     return None
 
 
-def find_location_mentions(query:str):
+def find_location_mentions(query: str) -> list[str]:
     """
     Finds country or city names inside a natural language query.
     """
@@ -302,7 +302,7 @@ def find_location_mentions(query:str):
 
     return unique_mentions
 
-def parse_route(query:str):
+def parse_route(query: str) -> tuple[str | None, str | None]:
     """
     Returns:
     dep_iata, arr_iata
@@ -397,7 +397,7 @@ def parse_route(query:str):
 
     return None, None
 
-def format_flight(flight: dict):
+def format_flight(flight: dict) -> str:
     airline = flight.get("airline", {}).get("name") or "Unknown airline"
     flight_number = flight.get("flight", {}).get("iata") or "Unknown flight number"
     status = flight.get("flight_status") or "Unknown"
@@ -443,7 +443,7 @@ Arrival:
 - Delay: {arr_delay_text}
 """.strip()
 
-def search_flights(query:str, limit:int = 10):
+def search_flights(query: str, limit: int = 10) -> str:
     if not API_KEY:
         return (
             "Flight API error: AVIATIONSTACK_API_KEY is missing.\n"

@@ -10,7 +10,7 @@ BASE_URL = "https://api.openweathermap.org/data/2.5"
 mcp = FastMCP("Weather MCP Server")
 
 @mcp.tool()
-def get_current_weather(city:str):
+def get_current_weather(city: str) -> dict:
     response = requests.get(
         f"{BASE_URL}/weather",
         params={
@@ -33,7 +33,7 @@ def get_current_weather(city:str):
 }
 
 @mcp.tool()
-def get_forecast(city:str):
+def get_forecast(city: str) -> dict:
     response = requests.get(
         f"{BASE_URL}/forecast",
         params={
