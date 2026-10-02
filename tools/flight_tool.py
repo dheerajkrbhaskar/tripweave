@@ -360,8 +360,8 @@ def parse_route(query:str):
         q_lower,
     )
     if match:
-            origin_text = match.group(1)
-            dest_text = match.group(2)
+            dest_text = match.group(1)
+            origin_text = match.group(2)
     
             dep_iata = resolve_location_to_iata(origin_text)
             arr_iata = resolve_location_to_iata(dest_text)

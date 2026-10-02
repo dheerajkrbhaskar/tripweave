@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Tripweave | AI travel planning</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -43,7 +44,7 @@
                     id="userInput"
                     aria-label="Describe your travel plans"
                     aria-describedby="inputHint"
-                    placeholder="Plan 7 days in Japan from Delhi, India for under 2 lakhs, with food spots and a relaxed pace..."
+                    placeholder="Try: Plan 5 days in Goa from Delhi under ₹40,000, with beaches, nightlife, and a relaxed pace..."
                 ></textarea>
                 <button id="sendBtn" type="button" onclick="sendMessage()" aria-label="Generate travel plan">
                     <span id="btnText">Weave my trip <span aria-hidden="true">→</span></span>
@@ -54,9 +55,10 @@
 
             <div class="quick-prompts" aria-label="Example travel prompts">
                 <span class="prompt-label">Try asking</span>
-                <button type="button" onclick="setPrompt('Plan a complete 7 days Japan trip from Delhi, India including flights, hotels and sightseeing under 2 lakhs.')">Japan on a budget</button>
-                <button type="button" onclick="setPrompt('Plan a 5 days Dubai trip from Delhi, India with flights, hotels and sightseeing.')">A Dubai long weekend</button>
-                <button type="button" onclick="setPrompt('Plan a 7 days Thailand trip from Delhi, India with budget hotels and sightseeing.')">Slow days in Thailand</button>
+                <button type="button" onclick="setPrompt('Plan a 7-day Bali trip from Delhi under ₹90,000 with beaches, local food, and a mix of relaxed and cultural activities.')">Build a full plan</button>
+                <button type="button" onclick="setPrompt('What are the latest flight options and approximate fares from Delhi to Moscow?')">Compare flights</button>
+                <button type="button" onclick="setPrompt('What will the weather be like in Tokyo next week, and what should I pack?')">Check the weather</button>
+                <button type="button" onclick="setPrompt('Find comfortable hotels in Paris near public transport under ₹12,000 per night.')">Find a stay</button>
             </div>
 
         </section>
@@ -74,16 +76,36 @@
                     <button class="copy-btn" type="button" onclick="copyResult()" aria-label="Copy travel plan">
                         <span aria-hidden="true">▣</span> Copy plan
                     </button>
-                    <button class="download-btn" type="button" onclick="downloadPDF()" aria-label="Download travel plan as PDF">
+                    <button id="downloadBtn" class="download-btn" type="button" onclick="downloadPDF()" aria-label="Download travel plan as PDF">
                         <span aria-hidden="true">↓</span> Download PDF
                     </button>
                 </div>
             </div>
 
+            <div id="draftNotice" class="draft-notice hidden" role="status">
+                <strong>Draft itinerary for review</strong>
+                <span>Please review the plan below before approving it.</span>
+            </div>
+            <div id="reviewContext" class="review-context hidden" aria-label="Trip constraints">
+                <div id="constraintSummary"></div>
+                <div id="constraintWarnings"></div>
+            </div>
+
             <div id="pdfContent" class="pdf-content">
                 <h1 class="pdf-title">Tripweave Travel Plan</h1>
-                <div class="plan-overview" id="planOverview" aria-label="Trip plan overview"></div>
                 <div id="resultBox" class="result-box" aria-live="polite"></div>
+            </div>
+
+            <div id="approvalPanel" class="approval-panel hidden" aria-labelledby="approvalTitle">
+                <p class="eyebrow">ONE LAST LOOK</p>
+                <h3 id="approvalTitle">Review your trip</h3>
+                <p id="approvalRequest">Approve this draft or tell us what you would like changed.</p>
+                <label for="feedbackInput">Feedback <span>(optional for approval)</span></label>
+                <textarea id="feedbackInput" rows="4" placeholder="Tell us what you'd like to change..."></textarea>
+                <div class="approval-actions">
+                    <button id="changesBtn" class="changes-btn" type="button" onclick="requestChanges()">Request changes</button>
+                    <button id="approveBtn" class="approve-btn" type="button" onclick="approvePlan()">Approve plan</button>
+                </div>
             </div>
 
         </section>

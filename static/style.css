@@ -328,45 +328,6 @@ button:focus-visible {
     opacity: .7;
 }
 
-.plan-overview {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 26px;
-}
-
-.overview-item {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--line);
-    border-radius: 11px;
-    background: #f8faf7;
-}
-
-.overview-icon {
-    display: grid;
-    flex: 0 0 30px;
-    width: 30px;
-    height: 30px;
-    place-items: center;
-    border-radius: 8px;
-    background: var(--teal-soft);
-    color: var(--teal-dark);
-}
-
-.overview-item strong {
-    display: block;
-    margin-bottom: 3px;
-    font: 700 .85rem "Manrope", sans-serif;
-}
-
-.overview-item p {
-    color: var(--muted);
-    font-size: .78rem;
-    line-height: 1.45;
-}
-
 .pdf-content {
     padding: 30px;
     border-radius: 12px;
@@ -380,6 +341,121 @@ button:focus-visible {
 .result-box {
     color: #35413d;
     line-height: 1.7;
+}
+
+.draft-notice {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-left: 4px solid #d28a3e;
+    border-radius: 9px;
+    background: #fff5e7;
+    color: #704617;
+    font-size: .86rem;
+}
+
+.draft-notice span {
+    color: #8a6745;
+}
+
+.review-context {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #f8faf7;
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.5;
+}
+
+#constraintSummary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+
+#constraintWarnings {
+    color: #825323;
+}
+
+.approval-panel {
+    margin-top: 24px;
+    padding: 24px;
+    border: 1px solid #b9ddd3;
+    border-radius: 12px;
+    background: var(--teal-soft);
+}
+
+.approval-panel h3 {
+    margin: 7px 0 6px;
+    font: 700 1.25rem "Manrope", sans-serif;
+}
+
+.approval-panel p:not(.eyebrow) {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.approval-panel label {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 7px;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.approval-panel label span {
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.approval-panel textarea {
+    min-height: 92px;
+    background: rgba(255, 255, 255, .8);
+}
+
+.approval-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.approval-actions button {
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 11px 15px;
+    font: 700 .82rem "DM Sans", sans-serif;
+}
+
+.changes-btn {
+    border: 1px solid #c5d2cc;
+    background: #fff;
+    color: var(--ink);
+}
+
+.approve-btn {
+    border: 1px solid var(--teal);
+    background: var(--teal);
+    color: #fff;
+}
+
+.changes-btn:hover,
+.approve-btn:hover {
+    transform: translateY(-1px);
+}
+
+.changes-btn:disabled,
+.approve-btn:disabled {
+    cursor: wait;
+    opacity: .65;
+    transform: none;
 }
 
 .result-box h1,
@@ -497,8 +573,7 @@ footer span {
     .hero-section,
     footer,
     .result-actions,
-    #threadInfo,
-    .plan-overview {
+    #threadInfo {
         display: none;
     }
 
@@ -559,10 +634,6 @@ footer span {
 
     #sendBtn {
         width: 100%;
-    }
-
-    .plan-overview {
-        grid-template-columns: 1fr;
     }
 
     .pdf-content {

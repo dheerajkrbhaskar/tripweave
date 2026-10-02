@@ -1,12 +1,13 @@
 let currentThreadId = localStorage.getItem("travel_thread_id") || null;
 let latestAnswerMarkdown = "";
 let loadingTimer = null;
+let workflowState = "IDLE";
 const loadingMessages = [
     "Understanding your trip...",
     "Searching for flights...",
     "Finding hotels...",
     "Building your itinerary...",
-    "Finalizing your travel plan..."
+    "Preparing your draft..."
 ];
 
 function setPrompt(text) {
@@ -38,6 +39,30 @@ function setLoading(isLoading) {
     }
 }
 
+function setWorkflowState(state) {
+    workflowState = state;
+    const sendBtn = document.getElementById("sendBtn");
+    const approvalPanel = document.getElementById("approvalPanel");
+    const approveBtn = document.getElementById("approveBtn");
+    const changesBtn = document.getElementById("changesBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    sendBtn.disabled = state === "PLANNING" || state === "RESUMING";
+    if (approvalPanel) {
+        approvalPanel.classList.toggle("hidden", state !== "WAITING_FOR_APPROVAL");
+    }
+    if (approveBtn && changesBtn) {
+        const resuming = state === "RESUMING";
+        approveBtn.disabled = resuming;
+        changesBtn.disabled = resuming;
+        approveBtn.setAttribute("aria-busy", String(resuming));
+        changesBtn.setAttribute("aria-busy", String(resuming));
+    }
+    if (downloadBtn) {
+        downloadBtn.disabled = state === "WAITING_FOR_APPROVAL" || state === "RESUMING";
+    }
+}
+
 function showError(message) {
     const errorBox = document.getElementById("errorBox");
 
@@ -52,12 +77,19 @@ function hideError() {
     errorBox.textContent = "";
 }
 
-function showResult(answer, threadId, flightResults, hotelResults) {
+function showResult(data) {
+    const answer = data.answer || data.itinerary || "";
     latestAnswerMarkdown = answer;
 
     const resultSection = document.getElementById("resultSection");
     const resultBox = document.getElementById("resultBox");
     const threadInfo = document.getElementById("threadInfo");
+    const resultEyebrow = document.querySelector(".result-header .eyebrow");
+    const resultTitle = document.querySelector(".result-header h2");
+    const draftNotice = document.getElementById("draftNotice");
+    const approvalRequest = document.getElementById("approvalRequest");
+    const hasItinerary = Array.isArray(data.selected_agents)
+        && data.selected_agents.includes("itinerary_agent");
 
     if (typeof marked !== "undefined") {
         resultBox.innerHTML = marked.parse(answer, { breaks: true });
@@ -65,10 +97,18 @@ function showResult(answer, threadId, flightResults, hotelResults) {
         resultBox.innerText = answer;
     }
 
-    threadInfo.textContent = "Plan generated just now";
-    threadInfo.title = `Conversation reference: ${threadId}`;
-    renderOverview(flightResults, hotelResults);
-
+    const draft = data.requires_approval === true;
+    resultEyebrow.textContent = draft
+        ? "DRAFT ITINERARY"
+        : (hasItinerary ? "YOUR PERSONAL ITINERARY" : "TRAVEL INFORMATION");
+    resultTitle.textContent = draft
+        ? "Review your thoughtfully arranged trip."
+        : (hasItinerary ? "Your trip, thoughtfully arranged." : "Here’s what we found.");
+    threadInfo.textContent = draft ? "Waiting for your review" : "Plan generated just now";
+    threadInfo.title = `Conversation reference: ${data.thread_id}`;
+    draftNotice.classList.toggle("hidden", !draft);
+    approvalRequest.textContent = data.approval_request || "Approve this draft or tell us what you would like changed.";
+    renderReviewContext(data);
     resultSection.classList.remove("hidden");
 
     resultSection.scrollIntoView({
@@ -77,21 +117,72 @@ function showResult(answer, threadId, flightResults, hotelResults) {
     });
 }
 
-function renderOverview(flightResults, hotelResults) {
-    const overview = document.getElementById("planOverview");
-    const items = [
-        ["Flights", flightResults, "✈"],
-        ["Stays", hotelResults, "⌂"]
-    ];
-    overview.innerHTML = items.map(([label, value, icon]) => {
-        const text = String(value || "").trim();
-        const summary = text ? text.replace(/[#*_`]/g, "").replace(/\s+/g, " ").slice(0, 150) : "Included in your plan";
-        return `<div class="overview-item"><span class="overview-icon" aria-hidden="true">${icon}</span><div><strong>${label}</strong><p>${escapeHtml(summary)}${summary.length >= 150 ? "…" : ""}</p></div></div>`;
-    }).join("");
+function renderReviewContext(data) {
+    const context = document.getElementById("reviewContext");
+    const summary = document.getElementById("constraintSummary");
+    const warnings = document.getElementById("constraintWarnings");
+    const constraints = data.trip_constraints || {};
+    const entries = [
+        ["Route", [constraints.origin, constraints.destination].filter(Boolean).join(" → ")],
+        ["Duration", constraints.duration],
+        ["Budget", constraints.budget],
+        ["Preferences", Array.isArray(constraints.special_preferences)
+            ? constraints.special_preferences.join(" · ")
+            : constraints.special_preferences],
+    ].filter(([, value]) => value);
+
+    summary.innerHTML = entries.map(([label, value]) =>
+        `<span><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}</span>`
+    ).join("");
+    const warningItems = Array.isArray(data.constraint_warnings)
+        ? data.constraint_warnings.filter(Boolean)
+        : [];
+    warnings.innerHTML = warningItems.length
+        ? `<strong>Budget alert:</strong> ${warningItems.map(escapeHtml).join(" ")}`
+        : "";
+    context.classList.toggle("hidden", !entries.length && !warningItems.length);
 }
 
 function escapeHtml(value) {
     return value.replace(/[&<>"']/g, character => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"}[character]));
+}
+
+function validateResponse(data) {
+    if (!data || typeof data !== "object") {
+        throw new Error("The travel service returned an invalid response.");
+    }
+    if (typeof data.thread_id !== "string" || !data.thread_id) {
+        throw new Error("The travel service did not return a valid conversation reference.");
+    }
+    if (typeof data.requires_approval !== "boolean") {
+        throw new Error("The travel service returned an incomplete workflow response.");
+    }
+    return data;
+}
+
+function handleWorkflowResponse(data) {
+    validateResponse(data);
+    currentThreadId = data.thread_id;
+    localStorage.setItem("travel_thread_id", currentThreadId);
+
+    if (data.guardrail_allowed === false) {
+        setWorkflowState("GUARDRAIL_BLOCKED");
+        showResult({
+            ...data,
+            answer: data.guardrail_reason || "This request is outside travel planning."
+        });
+        document.getElementById("draftNotice").classList.add("hidden");
+        document.querySelector(".result-header .eyebrow").textContent = "REQUEST NOT SUPPORTED";
+        document.querySelector(".result-header h2").textContent = "Let’s keep your next plan travel-focused.";
+        return;
+    }
+
+    showResult(data);
+    if (data.requires_approval === true) {
+        setWorkflowState("WAITING_FOR_APPROVAL");
+    } else {
+        setWorkflowState("COMPLETED");
+    }
 }
 
 async function sendMessage() {
@@ -105,6 +196,7 @@ async function sendMessage() {
         return;
     }
 
+    setWorkflowState("PLANNING");
     setLoading(true);
 
     try {
@@ -124,17 +216,68 @@ async function sendMessage() {
         if (!response.ok || !data.success) {
             throw new Error(data.error || "Something went wrong.");
         }
-
-        currentThreadId = data.thread_id;
-        localStorage.setItem("travel_thread_id", currentThreadId);
-
-        showResult(data.answer, data.thread_id, data.flight_results, data.hotel_results);
+        handleWorkflowResponse(data);
 
     } catch (error) {
+        setWorkflowState("ERROR");
         showError(error.message || "We couldn't create your plan. Please try again.");
     } finally {
         setLoading(false);
     }
+}
+
+async function resumePlan(approved) {
+    if (workflowState !== "WAITING_FOR_APPROVAL" || !currentThreadId) {
+        return;
+    }
+
+    const feedbackInput = document.getElementById("feedbackInput");
+    const feedback = feedbackInput.value.trim();
+    if (!approved && feedback.length < 3) {
+        feedbackInput.focus();
+        showError("Please tell us what you would like changed before requesting revisions.");
+        return;
+    }
+
+    hideError();
+    setWorkflowState("RESUMING");
+    setLoading(true);
+    document.getElementById("loadingText").textContent = approved
+        ? "Finalizing your travel plan..."
+        : "Updating your travel plan...";
+
+    try {
+        const response = await fetch("/api/travel", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                thread_id: currentThreadId,
+                approved: approved,
+                feedback: feedback
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "We couldn't update your travel plan.");
+        }
+        handleWorkflowResponse(data);
+    } catch (error) {
+        setWorkflowState("ERROR");
+        showError(error.message || "We couldn't update your travel plan. Please try again.");
+        setWorkflowState(currentThreadId ? "WAITING_FOR_APPROVAL" : "ERROR");
+    } finally {
+        setLoading(false);
+    }
+}
+
+function approvePlan() {
+    resumePlan(true);
+}
+
+function requestChanges() {
+    resumePlan(false);
 }
 
 function copyResult() {
@@ -220,3 +363,5 @@ document.addEventListener("keydown", function(event) {
         sendMessage();
     }
 });
+
+setWorkflowState("IDLE");

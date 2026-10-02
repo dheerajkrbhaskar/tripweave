@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Tripweave</title>
+  <rect width="64" height="64" rx="16" fill="#087f72"/>
+  <path d="m32 12 4.8 14.2L51 31l-14.2 4.8L32 50l-4.8-14.2L13 31l14.2-4.8L32 12Z" fill="#fff"/>
+  <circle cx="32" cy="31" r="4" fill="#087f72"/>
+</svg>

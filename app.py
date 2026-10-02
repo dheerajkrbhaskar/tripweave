@@ -3,15 +3,14 @@ import traceback
 import uvicorn
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from backend import run_travel_agent
+from backend import resume_travel_agent, run_travel_agent
 
 BASE_DIR = Path(__file__).resolve().parent
-print(BASE_DIR)
 app = FastAPI(
     title="Tripweave",
     description="Multi Agent Travel Planner",
@@ -27,8 +26,10 @@ templates = Jinja2Templates(
     directory=str(BASE_DIR / "templates")
 )
 class TravelRequest(BaseModel):
-    message: str
+    message: str = ""
     thread_id: str | None = None
+    approved: bool | None = None
+    feedback: str = ""
 
 @app.get("/",response_class=HTMLResponse)
 async def home(request:Request):
@@ -39,10 +40,10 @@ async def home(request:Request):
     )
 
 @app.post("/api/travel")
-async def travel_planner(request_data: TravelRequest):
+def travel_planner(request_data: TravelRequest):
     try:
         user_message = request_data.message.strip()
-        if not user_message:
+        if request_data.approved is None and not user_message:
             return JSONResponse(
                 status_code=400,
                 content={
@@ -51,20 +52,27 @@ async def travel_planner(request_data: TravelRequest):
                 }
             )
             
-        result = run_travel_agent(user_message,request_data.thread_id)
+        if request_data.approved is None:
+            result = run_travel_agent(user_message, request_data.thread_id)
+        else:
+            if not request_data.thread_id:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": "thread_id is required to resume approval."},
+                )
+            result = resume_travel_agent(
+                request_data.thread_id,
+                request_data.approved,
+                request_data.feedback,
+            )
         return JSONResponse(
             content={
                 "success": True,
-                "thread_id": result["thread_id"],
-                "answer": result["answer"],
-                "flight_results": result["flight_results"],
-                "hotel_results": result["hotel_results"],
-                "itinerary": result["itinerary"],
-                "llm_calls": result["llm_calls"],
+                **result,
             }
         )
-    except Exception as e:
-        print("ERROR:", e)
+    except Exception as error:
+        print("ERROR:", error)
         traceback.print_exc()
 
         return JSONResponse(
@@ -85,7 +93,7 @@ async def health_check():
 
 @app.get("/favicon.ico")
 async def favicon():
-    return JSONResponse(content={})
+    return FileResponse(BASE_DIR / "static" / "favicon.svg", media_type="image/svg+xml")
 
 
 
