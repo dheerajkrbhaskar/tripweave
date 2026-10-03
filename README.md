@@ -177,7 +177,7 @@ The API returns a JSON response containing fields such as:
 ## 4. Live link
 
 
-Live: https://tripweave.dheerajkrbhaskar.dev
+Live: https://tripweave.dheerajbhaskar.dev
 
 
 ---
