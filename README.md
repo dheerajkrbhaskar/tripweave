@@ -42,7 +42,7 @@ Supervisor and travel guardrail
 
 ### Architecture diagram
 
-![TripWeave architecture](docs/tripweave-architecture.svg)
+![TripWeave architecture](docs/architecture.png)
 
 ### Agent responsibilities
 
