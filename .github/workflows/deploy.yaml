@@ -16,7 +16,7 @@ jobs:
          host: ${{ secrets.VPS1_HOST }}
          username: ${{ secrets.VPS1_USERNAME }} 
          key: ${{ secrets.VPS1_SSH_KEY }}
-         script:
+         script: |
             cd  /opt/projects/tripweave
             ./deploy.sh
 
