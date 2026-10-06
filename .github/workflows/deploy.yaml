@@ -1,4 +1,4 @@
-name: Test VPS SSH
+name: Deploy Tripweave
 
 on:
   push:
@@ -6,17 +6,16 @@ on:
       - main
 
 jobs:
-  test-ssh:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test VPS connection
+      - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS1_HOST }}
           username: ${{ secrets.VPS1_USERNAME }}
           key: ${{ secrets.VPS1_SSH_KEY }}
           script: |
-            echo "SSH connection successful"
-            whoami
-            pwd
+            cd /opt/projects/tripweave
+            ./deploy.sh
