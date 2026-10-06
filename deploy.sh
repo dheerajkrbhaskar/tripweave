@@ -8,9 +8,6 @@ APP_PORT="8000"
 
 cd "$APP_DIR"
 
-echo "==> Pulling latest code..."
-git pull origin main
-
 echo "==> Building Docker image..."
 docker build -t "${APP_NAME}:latest" .
 
