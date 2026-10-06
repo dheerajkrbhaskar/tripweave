@@ -1,0 +1,22 @@
+name: Deploy Tripweave
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+     - name: Deploy to VPS
+       uses: appleboy/ssh-action@v1.2.2
+       with:
+         host: ${{ secrets.VPS1_HOST }}
+         username: ${{ secrets.VPS1_USERNAME }} 
+         key: ${{ secrets.VPS1_SSH_KEY }}
+         script:
+            cd  /opt/projects/tripweave
+            ./deploy.sh
+
